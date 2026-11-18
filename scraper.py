@@ -1,4 +1,4 @@
- import json
+import json
 import re
 from datetime import datetime
 from bs4 import BeautifulSoup
@@ -192,19 +192,3 @@ def ejecutar_scraper():
 
 if __name__ == "__main__":
     ejecutar_scraper()
-
-
-
-
-       
-                    
-        
-             
-
-              
-
-
-          
-                                 
-                    
-           
