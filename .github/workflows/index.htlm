@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Real Oviedo Infantil B - Estadísticas</title>
+  <style>
+    :root { --azul: #003399; --azul-oscuro: #001f66; --fondo: #f4f6fa; --blanco: #ffffff; --texto: #1e293b; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--fondo); color: var(--texto); margin: 0; padding: 0; }
+    header { background: linear-gradient(135deg, var(--azul), var(--azul-oscuro)); color: white; padding: 20px 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    header h1 { margin: 0; font-size: 1.3rem; }
+    header p { margin: 6px 0 0; font-size: 0.85rem; opacity: 0.85; }
+    .container { max-width: 900px; margin: 16px auto; padding: 0 12px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+    .tab { flex: 1; padding: 10px; border: none; border-radius: 8px; background: #e2e8f0; font-weight: 600; cursor: pointer; color: var(--texto); }
+    .tab.active { background: var(--azul); color: white; }
+    .card { background: var(--blanco); border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); overflow-x: auto; padding: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th { background: #f1f5f9; color: #475569; text-align: center; padding: 10px 6px; font-size: 0.78rem; text-transform: uppercase; cursor: pointer; }
+    th:first-child, td:first-child { text-align: left; padding-left: 10px; }
+    td { padding: 10px 6px; border-bottom: 1px solid #f1f5f9; text-align: center; }
+    tr:hover { background: #f8fafc; }
+    .badge-min { background: #dbeafe; color: #1e40af; font-weight: 700; padding: 3px 8px; border-radius: 99px; font-size: 0.82rem; }
+    .jornada-box { background: white; border-radius: 10px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .jornada-titulo { font-weight: 700; color: var(--azul); margin-bottom: 8px; font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Real Oviedo · Segunda Infantil G2</h1>
+    <p id="info-actualizacion">Cargando estadísticas oficiales de Asturfutbol...</p>
+  </header>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" onclick="cambiarVista('plantilla', this)">Plantilla Acumulada</button>
+      <button class="tab" onclick="cambiarVista('jornadas', this)">Por Jornadas</button>
+    </div>
+
+    <div id="vista-plantilla" class="card">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="ordenar('nombre')">Jugador</th>
+            <th onclick="ordenar('convocados')">Conv</th>
+            <th onclick="ordenar('jugados')">PJ</th>
+            <th onclick="ordenar('titular')">Tit</th>
+            <th onclick="ordenar('suplente')">Sup</th>
+            <th onclick="ordenar('minutos')">Min</th>
+            <th onclick="ordenar('goles')">Goles</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-body"></tbody>
+      </table>
+    </div>
+
+    <div id="vista-jornadas" style="display:none;"></div>
+  </div>
+
+  <script>
+    let datos = null;
+    let ordenActual = 'minutos';
+
+    async function cargarDatos() {
+      try {
+        const res = await fetch('datos.json?t=' + Date.now());
+        datos = await res.json();
+        document.getElementById('info-actualizacion').textContent =
+          `Partidos de ${datos.duracion_partido}' · Actualizado: ${datos.ultima_actualizacion}`;
+        renderPlantilla();
+        renderJornadas();
+      } catch (e) {
+        document.getElementById('info-actualizacion').textContent =
+          'Aún no se ha ejecutado la primera extracción. Ejecuta el Action en GitHub.';
+      }
+    }
+
+    function ordenar(campo) {
+      ordenActual = campo;
+      renderPlantilla();
+    }
+
+    function renderPlantilla() {
+      const tbody = document.getElementById('tabla-body');
+      const lista = Object.values(datos.plantilla).sort((a, b) => {
+        if (ordenActual === 'nombre') return a.nombre.localeCompare(b.nombre);
+        return b[ordenActual] - a[ordenActual];
+      });
+
+      tbody.innerHTML = lista.map(j => `
+        <tr>
+          <td><strong>${j.dorsal ? j.dorsal + '. ' : ''}${j.nombre}</strong></td>
+          <td>${j.convocados}</td>
+          <td>${j.jugados}</td>
+          <td>${j.titular}</td>
+          <td>${j.suplente}</td>
+          <td><span class="badge-min">${j.minutos}'</span></td>
+          <td>${j.goles > 0 ? '⚽ ' + j.goles : '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderJornadas() {
+      const cont = document.getElementById('vista-jornadas');
+      cont.innerHTML = datos.partidos.slice().reverse().map(p => `
+        <div class="jornada-box">
+          <div class="jornada-titulo">${p.jornada} · ${p.resumen}</div>
+          <table>
+            <thead>
+              <tr><th>Jugador</th><th>Rol</th><th>Minutos</th><th>Goles</th></tr>
+            </thead>
+            <tbody>
+              ${p.jugadores.map(j => `
+                <tr>
+                  <td>${j.nombre}</td>
+                  <td>${j.titular ? 'Titular' : (j.jugado ? 'Suplente' : 'Sin jugar')}</td>
+                  <td><span class="badge-min">${j.minutos}'</span></td>
+                  <td>${j.goles > 0 ? '⚽ ' + j.goles : '-'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `).join('');
+    }
+
+    function cambiarVista(vista, btn) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('vista-plantilla').style.display = vista === 'plantilla' ? 'block' : 'none';
+      document.getElementById('vista-jornadas').style.display = vista === 'jornadas' ? 'block' : 'none';
+    }
+
+    cargarDatos();
+  </script>
+</body>
+</html>
