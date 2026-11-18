@@ -1,0 +1,38 @@
+name: Actualizar Estadísticas Real Oviedo Infantil
+
+on:
+  schedule:
+    # Se ejecuta automáticamente todos los domingos a las 21:00 (hora España) y lunes a las 10:00
+    - cron: '0 20 * * 0'
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # Permite ejecutarlo manualmente con un botón cuando quieras
+
+permissions:
+  contents: write
+
+jobs:
+  scrape-and-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias y navegador
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+
+      - name: Ejecutar extractor de Asturfutbol
+        run: python scraper.py
+
+      - name: Guardar estadísticas actualizadas
+        run: |
+          git config --local user.email "bot@github.com"
+          git config --local user.name "Asturfutbol Bot"
+          git add datos.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Actualización automática de jornada" && git push)
