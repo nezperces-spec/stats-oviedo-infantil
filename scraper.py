@@ -1,4 +1,4 @@
-mport json
+ import json
 import re
 from datetime import datetime
 from bs4 import BeautifulSoup
@@ -72,7 +72,6 @@ def extraer_datos_acta(html_acta):
                     "rojas": 0
                 }
 
-    # Búsqueda de goles y cambios en el acta
     texto_completo_acta = soup.get_text("\n")
     for linea in texto_completo_acta.split("\n"):
         linea_limpia = limpiar_texto(linea)
@@ -122,14 +121,9 @@ def ejecutar_scraper():
         page = context.new_page()
 
         try:
-            # URL directa de la competición en Asturfutbol (Segunda Infantil Grupo 2)
             page.goto("https://www.asturfutbol.es/pnfg/NPcd/NFG_CmpJornada?cod_primaria=1000120", timeout=60000)
             page.wait_for_timeout(4000)
 
-            # Intentar recopilar partidos de la página actual
-            enlaces_partidos = page.locator("a[href*='NFG_CmpPartido'], a[href*='acta']").all()
-            
-            # Si hay partidos visibles, procesamos
             filas = page.locator("tr").all()
             for fila in filas:
                 texto_fila = limpiar_texto(fila.inner_text())
@@ -164,7 +158,6 @@ def ejecutar_scraper():
         finally:
             browser.close()
 
-    # Consolidar estadísticas
     for partido in datos_globales["partidos"]:
         for j in partido["jugadores"]:
             nombre = j["nombre"]
@@ -199,6 +192,9 @@ def ejecutar_scraper():
 
 if __name__ == "__main__":
     ejecutar_scraper()
+
+
+
 
        
                     
