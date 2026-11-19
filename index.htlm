@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estadísticas - Real Oviedo Infantil</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      margin: 0;
+      padding: 24px;
+    }
+    .contenedor {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    h1 {
+      margin: 0 0 6px 0;
+      font-size: 1.8rem;
+      color: #38bdf8;
+    }
+    .subtitulo {
+      color: #94a3b8;
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1e293b;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid #334155;
+      font-size: 0.92rem;
+    }
+    th {
+      background: #0284c7;
+      color: #ffffff;
+      font-weight: 600;
+    }
+    tr:hover {
+      background: #273549;
+    }
+    .num {
+      text-align: center;
+    }
+    .aviso {
+      background: #1e293b;
+      padding: 16px;
+      border-radius: 8px;
+      border-left: 4px solid #38bdf8;
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <h1>Real Oviedo — Estadísticas Infantil</h1>
+    <div class="subtitulo" id="meta">Cargando datos...</div>
+    <div id="contenido"></div>
+  </div>
+
+  <script>
+    fetch("datos.json?t=" + Date.now())
+      .then(res => {
+        if (!res.ok) throw new Error("No se encontró datos.json");
+        return res.json();
+      })
+      .then(data => {
+        document.getElementById("meta").textContent =
+          `${data.equipo || "Real Oviedo"} · ${data.competicion || ""} · Última actualización: ${data.ultima_actualizacion || "-"}`;
+
+        const jugadores = Object.values(data.plantilla || {}).sort((a, b) => (b.minutos || 0) - (a.minutos || 0));
+
+        if (!jugadores.length) {
+          document.getElementById("contenido").innerHTML =
+            `<div class="aviso">El archivo <strong>datos.json</strong> se ha generado, pero de momento no contiene jugadores extraídos del acta.</div>`;
+          return;
+        }
+
+        let filas = jugadores.map(j => `
+          <tr>
+            <td class="num">${j.dorsal || "-"}</td>
+            <td><strong>${j.nombre || "-"}</strong></td>
+            <td class="num">${j.convocados ?? 0}</td>
+            <td class="num">${j.jugados ?? 0}</td>
+            <td class="num">${j.titular ?? 0}</td>
+            <td class="num">${j.suplente ?? 0}</td>
+            <td class="num"><strong>${j.minutos ?? 0}'</strong></td>
+            <td class="num">${j.goles ?? 0}</td>
+            <td class="num">${j.amarillas ?? 0}</td>
+            <td class="num">${j.rojas ?? 0}</td>
+          </tr>
+        `).join("");
+
+        document.getElementById("contenido").innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th class="num">#</th>
+                <th>Jugador</th>
+                <th class="num">Conv.</th>
+                <th class="num">Jug.</th>
+                <th class="num">Tit.</th>
+                <th class="num">Sup.</th>
+                <th class="num">Min.</th>
+                <th class="num">Goles</th>
+                <th class="num">TA</th>
+                <th class="num">TR</th>
+              </tr>
+            </thead>
+            <tbody>${filas}</tbody>
+          </table>
+        `;
+      })
+      .catch(err => {
+        document.getElementById("contenido").innerHTML =
+          `<div class="aviso">No se pudieron cargar los datos (${err.message}). Comprueba que <strong>datos.json</strong> exista en el repositorio.</div>`;
+      });
+  </script>
+</body>
+</html>
